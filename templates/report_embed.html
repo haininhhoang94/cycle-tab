@@ -8,22 +8,36 @@
     body {
       margin: 0;
       height: 100%;
+      width: 100vw;
+      overflow: hidden;
     }
 
     #reportContainer {
       width: 100vw;
       height: 100vh;
+      min-height: 100vh;
+      min-width: 100vw;
       position: relative;
-      transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
-      will-change: transform;
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
-    .swipe-out {
-      transform: translateX(-100vw);
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      transition: opacity 0.6s cubic-bezier(0.77, 0, 0.175, 1);
+      will-change: opacity;
+      background: #146460;
+      z-index: 1;
+      opacity: 1;
     }
 
-    .swipe-in {
-      transform: translateX(0);
+    .fade-out {
+      opacity: 0;
+      z-index: 2;
     }
   </style>
 </head>
@@ -53,32 +67,33 @@
     const reportContainer = document.getElementById("reportContainer");
     const report = powerbi.embed(reportContainer, config);
 
-    // Auto-cycle through report pages every 30 seconds
+    // Helper to create a fade overlay
+    function createFade() {
+      const fade = document.createElement("div");
+      fade.className = "slide";
+      reportContainer.appendChild(fade);
+      return fade;
+    }
+
+    // Auto-cycle through report pages every 10 seconds
     report.on("loaded", function () {
       report.getPages().then(function (pages) {
         let currentPage = 0;
         function switchToNextPage() {
-          // Animate swipe out
-          reportContainer.classList.add("swipe-out");
+          // Create overlay fade effect
+          const fade = createFade();
           setTimeout(() => {
+            fade.classList.add("fade-out");
             currentPage = (currentPage + 1) % pages.length;
-            report.setPage(pages[currentPage].name).then(() => {
-              report.once("rendered", function () {
-                // Animate swipe in
-                reportContainer.classList.remove("swipe-out");
-                reportContainer.classList.add("swipe-in");
-                setTimeout(() => {
-                  reportContainer.classList.remove("swipe-in");
-                  setTimeout(switchToNextPage, 10000); // 10 seconds
-                }, 600); // match transition duration
-              });
-            });
-          }, 600); // match transition duration
+            report.setPage(pages[currentPage].name);
+            setTimeout(() => {
+              reportContainer.removeChild(fade);
+              setTimeout(switchToNextPage, 10000); // 10 seconds
+            }, 600); // match transition duration
+          }, 10); // allow DOM to render fade
         }
         // Start cycling after initial render
-        report.once("rendered", function () {
-          setTimeout(switchToNextPage, 10000); // 10 seconds
-        });
+        setTimeout(switchToNextPage, 10000); // 10 seconds
       });
     });
   </script>
