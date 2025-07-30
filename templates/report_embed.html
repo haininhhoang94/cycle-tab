@@ -13,6 +13,17 @@
     #reportContainer {
       width: 100vw;
       height: 100vh;
+      position: relative;
+      transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
+      will-change: transform;
+    }
+
+    .swipe-out {
+      transform: translateX(-100vw);
+    }
+
+    .swipe-in {
+      transform: translateX(0);
     }
   </style>
 </head>
@@ -46,10 +57,28 @@
     report.on("loaded", function () {
       report.getPages().then(function (pages) {
         let currentPage = 0;
-        setInterval(function () {
-          currentPage = (currentPage + 1) % pages.length;
-          report.setPage(pages[currentPage].name);
-        }, 3000); // 30 seconds
+        function switchToNextPage() {
+          // Animate swipe out
+          reportContainer.classList.add("swipe-out");
+          setTimeout(() => {
+            currentPage = (currentPage + 1) % pages.length;
+            report.setPage(pages[currentPage].name).then(() => {
+              report.once("rendered", function () {
+                // Animate swipe in
+                reportContainer.classList.remove("swipe-out");
+                reportContainer.classList.add("swipe-in");
+                setTimeout(() => {
+                  reportContainer.classList.remove("swipe-in");
+                  setTimeout(switchToNextPage, 10000); // 10 seconds
+                }, 600); // match transition duration
+              });
+            });
+          }, 600); // match transition duration
+        }
+        // Start cycling after initial render
+        report.once("rendered", function () {
+          setTimeout(switchToNextPage, 10000);
+        });
       });
     });
   </script>
