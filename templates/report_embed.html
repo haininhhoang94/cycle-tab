@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="/static/powerbi.min.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+    }
+
+    #reportContainer {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="reportContainer"></div>
+
+  <script>
+    const models = window['powerbi-client'].models;
+
+    const config = {
+      type: 'report',
+      tokenType: models.TokenType.Aad,  // AAD = Delegated
+      accessToken: "{{ embed_token }}", // from backend (MSAL)
+      embedUrl: "{{ embed_url }}",      // Power BI report URL
+      id: "{{ report_id }}",
+      permissions: models.Permissions.All,
+      settings: {
+        panes: {
+          filters: { visible: false },
+          pageNavigation: { visible: false } // Hide navigation tabs
+        },
+        navContentPaneEnabled: false // Hide report tabs (chromeless)
+      }
+    };
+
+    const reportContainer = document.getElementById("reportContainer");
+    const report = powerbi.embed(reportContainer, config);
+
+    // Auto-cycle through report pages every 30 seconds
+    report.on("loaded", function () {
+      report.getPages().then(function (pages) {
+        let currentPage = 0;
+        setInterval(function () {
+          currentPage = (currentPage + 1) % pages.length;
+          report.setPage(pages[currentPage].name);
+        }, 3000); // 30 seconds
+      });
+    });
+  </script>
+</body>
+
+</html>
