@@ -3,7 +3,9 @@ from dotenv import load_dotenv
 import os
 import urllib.parse
 
-load_dotenv()
+# Only load .env if it exists (local dev), skip for Railway
+if os.path.exists(".env"):
+    load_dotenv()
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 TENANT_ID = os.getenv("TENANT_ID")
